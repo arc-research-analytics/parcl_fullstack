@@ -1,0 +1,31 @@
+# .github/workflows/etl-pipeline.yml
+name: ETL Pipeline
+on:
+  schedule:
+    - cron: "0 0 1 * *" # Run monthly on 1st day at midnight UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          cd etl
+          pip install -r requirements.txt
+
+      - name: Run ETL Pipeline
+        env:
+          PARCL_LABS_API_KEY: ${{ secrets.PARCL_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          cd etl
+          python etl.py
