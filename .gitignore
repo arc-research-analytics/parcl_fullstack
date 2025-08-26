@@ -1,5 +1,5 @@
 # Ignore all files in the .DS_Store directory
-.DS_Store/
+.DS_Store
 
 # Ignore the .env file in the etl/config directory
 etl/config/.env
