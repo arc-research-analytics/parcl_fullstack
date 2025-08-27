@@ -9,17 +9,16 @@ jobs:
   etl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
       - name: Install dependencies
         run: |
-          cd etl
-          pip install -r requirements.txt
+          pip install -r etl/requirements.txt
 
       - name: Run ETL Pipeline
         env:
@@ -27,5 +26,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          cd etl
-          python etl.py
+          python etl/etl.py
