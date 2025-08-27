@@ -321,6 +321,9 @@ def main():
 
         # create a new dataframe that filters to include only rows with a value in either 'buyer' or 'seller'
         sales_investor = sales_joined[sales_joined['buyer'].notna() | sales_joined['seller'].notna()]
+        sales_investor = sales_investor.copy()
+        sales_investor['sale_date'] = pd.to_datetime(sales_investor['sale_date'])
+        sales_investor['year_month'] = sales_investor['sale_date'].dt.to_period('M')
 
         # remove any duplicate rows where 'county', 'sale_date', and 'sale_price' are the same
         sales_joined = sales_joined.drop_duplicates(subset=['county', 'sale_date', 'sale_price'])
@@ -346,15 +349,45 @@ def main():
         ).reset_index()
 
         # merge sales_hex_summary1 and sales_hex_summary2 on 'h3_id'
-        sales_hex_summary = pd.merge(sales_hex_summary1, sales_hex_summary2, on='h3_id', how='left')
+        sales_hex_summary = pd.merge(sales_hex_summary1, sales_hex_summary2, on='h3_id', how='outer')
+
+        # aggregate sales by county
+        sales_joined = sales_joined.copy()
+        sales_joined['sale_date'] = pd.to_datetime(sales_joined['sale_date'])
+        sales_joined['year_month'] = sales_joined['sale_date'].dt.to_period('M')
+        sales_county_summary1 = sales_joined.groupby(['county', 'year_month']).agg(
+            total_sales=('parcl_property_id','count'),
+            median_vintage=('year_built','median'),
+            median_size=('square_feet','median'),
+            median_price_sf=('price_sf','median'),
+        ).reset_index()
+        
+        sales_county_summary2 = sales_investor.groupby(['county', 'year_month']).agg(
+            inst_acquisitions=('buyer','count'),
+            inst_dispositions=('seller','count'),
+        ).reset_index()
+        
+        sales_county_summary = pd.merge(sales_county_summary1, sales_county_summary2, on=['county', 'year_month'], how='outer')
 
         # add a column called 'as_of_date' with the current date
         sales_hex_summary['as_of_date'] = today_formatted
+        sales_county_summary['as_of_date'] = today_formatted
+        sales_county_summary = sales_county_summary[[
+            'county',
+            'year_month',
+            'as_of_date',
+            'total_sales',
+            'inst_acquisitions',
+            'inst_dispositions',
+            'median_vintage',
+            'median_size',
+            'median_price_sf',
+        ]]
 
         # merge sales_hex_summary with listings_hex_summary
         final_hex_summary = pd.merge(sales_hex_summary, listings_hex_summary, on='h3_id', how='outer')
 
-        # rearrange columns
+        # rearrange hex summary columns
         final_hex_summary = final_hex_summary[[
             'h3_id',
             'as_of_date',
@@ -372,20 +405,27 @@ def main():
         # fill NaN values with 0
         final_hex_summary = final_hex_summary.fillna(0)
 
-        # cast columns to int
+        # cast hex summary columns to int
         final_hex_summary['total_sales'] = final_hex_summary['total_sales'].astype(int)
         final_hex_summary['inst_acquisitions'] = final_hex_summary['inst_acquisitions'].astype(int)
         final_hex_summary['inst_dispositions'] = final_hex_summary['inst_dispositions'].astype(int)
         final_hex_summary['total_listings'] = final_hex_summary['total_listings'].astype(int)
         final_hex_summary['inst_listings'] = final_hex_summary['inst_listings'].astype(int)
 
-        # # export the sales_hex_summary to CSV
-        # final_hex_summary.to_csv(f'hex_market_summary.csv', index=False)
-        # print(final_hex_summary.dtypes)
-        # print(final_hex_summary.head(3))
+        # cast county summary columns to int
+        sales_county_summary['total_sales'] = sales_county_summary['total_sales'].astype(int)
+        sales_county_summary['inst_acquisitions'] = sales_county_summary['inst_acquisitions'].astype(int)
+        sales_county_summary['inst_dispositions'] = sales_county_summary['inst_dispositions'].astype(int)
+        sales_county_summary['median_vintage'] = sales_county_summary['median_vintage'].astype(int)
+        sales_county_summary['median_size'] = sales_county_summary['median_size'].astype(int)
 
-        # convert dataframe to dict format for supabase
+        # # for testing purposes
+        # final_hex_summary = pd.read_csv('test_hex_summary.csv')
+        # sales_county_summary = pd.read_csv('test_county_summary.csv')
+
+        # convert dataframes to dict format for supabase
         supabase_hex_summary = final_hex_summary.to_dict(orient='records')
+        supabase_county_summary = sales_county_summary.to_dict(orient='records')
 
         # ---------- Supabase ----------
 
@@ -400,15 +440,24 @@ def main():
             SUPABASE_KEY
         )
 
-        # wipe existing rows in table
+        # wipe existing rows in hex summary table
         supabase.table("hex_summary").delete().neq("h3_id", 0).execute()
 
-        # insert new rows into supabase
+        # insert new rows into hex_summary supabase table
         batch_size = 500
         for i in range(0, len(supabase_hex_summary), batch_size):
             batch = supabase_hex_summary[i:i+batch_size]
             supabase.table("hex_summary").insert(batch).execute()
             print(f"Inserted batch {i//batch_size + 1} of {len(supabase_hex_summary)//batch_size}")
+
+        # wipe existing rows in county summary table
+        supabase.table("county_summary").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+
+        # insert new rows into county summary supabase table
+        for i in range(0, len(supabase_county_summary), batch_size):
+            batch = supabase_county_summary[i:i+batch_size]
+            supabase.table("county_summary").insert(batch).execute()
+            print(f"Inserted batch {i//batch_size + 1} of {len(supabase_county_summary)//batch_size}")
 
     except Exception as e:
         print(f"Error: {str(e)}")
