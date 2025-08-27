@@ -21,9 +21,10 @@ jobs:
           pip install -r etl/requirements.txt
 
       - name: Run ETL Pipeline
+        working-directory: etl
         env:
           PARCL_API_KEY: ${{ secrets.PARCL_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          python etl/etl.py
+          python etl.py
