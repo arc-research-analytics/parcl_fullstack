@@ -324,6 +324,7 @@ def main():
         sales_investor = sales_investor.copy()
         sales_investor['sale_date'] = pd.to_datetime(sales_investor['sale_date'])
         sales_investor['year_month'] = sales_investor['sale_date'].dt.to_period('M')
+        sales_investor['year_month'] = sales_investor['year_month'].astype(str)
 
         # remove any duplicate rows where 'county', 'sale_date', and 'sale_price' are the same
         sales_joined = sales_joined.drop_duplicates(subset=['county', 'sale_date', 'sale_price'])
@@ -355,6 +356,7 @@ def main():
         sales_joined = sales_joined.copy()
         sales_joined['sale_date'] = pd.to_datetime(sales_joined['sale_date'])
         sales_joined['year_month'] = sales_joined['sale_date'].dt.to_period('M')
+        sales_joined['year_month'] = sales_joined['year_month'].astype(str)
         sales_county_summary1 = sales_joined.groupby(['county', 'year_month']).agg(
             total_sales=('parcl_property_id','count'),
             median_vintage=('year_built','median'),
@@ -450,6 +452,8 @@ def main():
             supabase.table("hex_summary").insert(batch).execute()
             print(f"Inserted batch {i//batch_size + 1} of {len(supabase_hex_summary)//batch_size}")
 
+        print('Hex summary rows added to Supabase🎉')
+
         # wipe existing rows in county summary table
         supabase.table("county_summary").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
 
@@ -459,6 +463,8 @@ def main():
             supabase.table("county_summary").insert(batch).execute()
             print(f"Inserted batch {i//batch_size + 1} of {len(supabase_county_summary)//batch_size}")
 
+        print('County summary rows added to Supabase🎉')
+        
     except Exception as e:
         print(f"Error: {str(e)}")
         print("Full traceback:")
