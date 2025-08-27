@@ -1,0 +1,6 @@
+geopandas==1.0.1
+pandas==2.3.2
+parcllabs==1.16.1
+python-dotenv==1.1.1
+python_dateutil==2.9.0.post0
+supabase==2.18.1
