@@ -38,14 +38,12 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ ETL Pipeline Success // Parcl Labs API to Supabase"
+          subject: "✅ ETL Pipeline Success"
           body: |
-            🎉 Your ETL pipeline completed successfully!
+            🎉 BRO. Your ETL pipeline of Parcl Labs API to Supabase completed successfully! Damn it feels good to be a gangsta.
 
             📊 Run Details:
             • Repository: ${{ github.repository }}
-            • Run Number: ${{ github.run_number }}
-            • Timestamp: ${{ github.event.head_commit.timestamp }}
             • Workflow: ${{ github.workflow }}
 
             🔗 View detailed logs:
@@ -64,14 +62,12 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "❌ ETL Pipeline FAILED // Parcl Labs API to Supabase"
+          subject: "❌ ETL Pipeline FAILED"
           body: |
-            ⚠️ Your ETL pipeline encountered an error!
+            ⚠️ Your ETL pipeline of Parcl Labs API to Supabase encountered an error!
 
             📊 Run Details:
             • Repository: ${{ github.repository }}
-            • Run Number: ${{ github.run_number }}
-            • Timestamp: ${{ github.event.head_commit.timestamp }}
             • Workflow: ${{ github.workflow }}
 
             🔗 View error logs:

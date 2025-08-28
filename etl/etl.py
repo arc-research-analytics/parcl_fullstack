@@ -17,7 +17,7 @@ def main():
 
         # set lookback lag & window size (in months)
         lookback_lag = 2
-        lookback_window = 6
+        lookback_window = 36
 
         # calculate the max date for Parcl API
         three_months_ago = datetime.now() - relativedelta(months=lookback_lag)
@@ -326,6 +326,11 @@ def main():
         sales_investor['year_month'] = sales_investor['sale_date'].dt.to_period('M')
         sales_investor['year_month'] = sales_investor['year_month'].astype(str)
 
+        sales_investor_hex_agg = sales_investor.copy()
+
+        # filter to include only last 12 months, starting with today minus lookback_lag
+        sales_investor_hex_agg = sales_investor_hex_agg[sales_investor_hex_agg['sale_date'] > (max_date - pd.DateOffset(months=12))]
+
         # remove any duplicate rows where 'county', 'sale_date', and 'sale_price' are the same
         sales_joined = sales_joined.drop_duplicates(subset=['county', 'sale_date', 'sale_price'])
 
@@ -335,8 +340,14 @@ def main():
         # remove any rows where price_sf is excessive
         sales_joined = sales_joined[sales_joined['price_sf'] < 2500]
 
+        # create a new dataframe and filters to only include sales from the past 12 months
+        # calculate this dynamically based on the 'today' variable and going back 12 months
+        sales_hex_agg = sales_joined.copy()
+        sales_hex_agg['sale_date'] = pd.to_datetime(sales_hex_agg['sale_date'])
+        sales_hex_agg = sales_hex_agg[sales_hex_agg['sale_date'] > (max_date - pd.DateOffset(months=12))]
+
         # aggregate sales by hex_id
-        sales_hex_summary1 = sales_joined.groupby('h3_id').agg(
+        sales_hex_summary1 = sales_hex_agg.groupby('h3_id').agg(
             total_sales=('parcl_property_id','count'),
             median_vintage=('year_built','median'),
             median_size=('square_feet','median'),
@@ -344,7 +355,7 @@ def main():
         ).reset_index()
 
         # aggregate sales_investor by hex_id and count the number of 'buyer' and 'seller' values that aren't NA
-        sales_hex_summary2 = sales_investor.groupby('h3_id').agg(
+        sales_hex_summary2 = sales_investor_hex_agg.groupby('h3_id').agg(
             inst_acquisitions=('buyer','count'),
             inst_dispositions=('seller','count'),
         ).reset_index()
@@ -435,9 +446,9 @@ def main():
         supabase_county_summary = sales_county_summary.to_dict(orient='records')
 
         # clean up unaggregated dataframes before to_dict method
-        master_listings = master_listings.copy()
-        master_listings['as_of_date'] = today_formatted
-        master_listings = master_listings[[
+        listings_unagg = listings_final.copy()
+        listings_unagg['as_of_date'] = today_formatted
+        listings_unagg = listings_unagg[[
             'address',
             'county_name',
             'property_type',
@@ -456,14 +467,14 @@ def main():
             'as_of_date',
         ]]
 
-        master_listings = master_listings.rename(columns={
+        listings_unagg = listings_unagg.rename(columns={
             'county_name': 'county',
             'institutional_investor': 'inst_owner',
         })
 
-        master_listings['property_type'] = master_listings['property_type'].str.replace('SINGLE_FAMILY', 'SFR')
-        master_listings['property_type'] = master_listings['property_type'].str.replace('TOWNHOUSE', 'Townhouse')
-        master_listings['property_type'] = master_listings['property_type'].str.replace('CONDO', 'Condo')
+        listings_unagg['property_type'] = listings_unagg['property_type'].str.replace('SINGLE_FAMILY', 'SFR')
+        listings_unagg['property_type'] = listings_unagg['property_type'].str.replace('TOWNHOUSE', 'Townhouse')
+        listings_unagg['property_type'] = listings_unagg['property_type'].str.replace('CONDO', 'Condo')
 
         sales_joined = sales_joined.copy()
         sales_joined['as_of_date'] = today_formatted
@@ -484,11 +495,11 @@ def main():
         ]]
 
         # fill NaN values with 0
-        master_listings = master_listings.fillna(0)
+        listings_unagg = listings_unagg.fillna(0)
         sales_joined = sales_joined.fillna(0)
 
         # cast 'year_built' to int in both dataframes
-        master_listings['year_built'] = master_listings['year_built'].astype(int)
+        listings_unagg['year_built'] = listings_unagg['year_built'].astype(int)
         sales_joined['year_built'] = sales_joined['year_built'].astype(int)
 
         # Handle date columns - convert any datetime objects to strings FIRST
@@ -497,15 +508,15 @@ def main():
             sales_joined['sale_date'] = sales_joined['sale_date'].dt.strftime('%Y-%m-%d')
 
         # Do the same for listings date columns if needed
-        if master_listings['original_list_date'].dtype == 'datetime64[ns]' or hasattr(master_listings['original_list_date'].iloc[0], 'strftime'):
-            master_listings['original_list_date'] = master_listings['original_list_date'].dt.strftime('%Y-%m-%d')
+        if listings_unagg['original_list_date'].dtype == 'datetime64[ns]' or hasattr(listings_unagg['original_list_date'].iloc[0], 'strftime'):
+            listings_unagg['original_list_date'] = listings_unagg['original_list_date'].dt.strftime('%Y-%m-%d')
 
-        if master_listings['most_recent_sale_date'].dtype == 'datetime64[ns]' or hasattr(master_listings['most_recent_sale_date'].iloc[0], 'strftime'):
-            master_listings['most_recent_sale_date'] = master_listings['most_recent_sale_date'].dt.strftime('%Y-%m-%d')
+        if listings_unagg['most_recent_sale_date'].dtype == 'datetime64[ns]' or hasattr(listings_unagg['most_recent_sale_date'].iloc[0], 'strftime'):
+            listings_unagg['most_recent_sale_date'] = listings_unagg['most_recent_sale_date'].dt.strftime('%Y-%m-%d')
 
         # Replace '0' and 'NaT' with None for date columns
-        master_listings['original_list_date'] = master_listings['original_list_date'].replace(['0', 'NaT'], None)
-        master_listings['most_recent_sale_date'] = master_listings['most_recent_sale_date'].replace(['0', 'NaT'], None)
+        listings_unagg['original_list_date'] = listings_unagg['original_list_date'].replace(['0', 'NaT'], None)
+        listings_unagg['most_recent_sale_date'] = listings_unagg['most_recent_sale_date'].replace(['0', 'NaT'], None)
         sales_joined['sale_date'] = sales_joined['sale_date'].replace(['0', 'NaT'], None)
 
         # Convert any remaining datetime columns to strings
@@ -515,12 +526,9 @@ def main():
                 sales_joined[col] = sales_joined[col].dt.strftime('%Y-%m-%d')
                 sales_joined[col] = sales_joined[col].replace('NaT', None)
 
-        # export to CSV for testing
-        master_listings.to_csv('master_listings.csv', index=False)
-        sales_joined.to_csv('sales_joined.csv', index=False)
 
         # export to JSON for Supabase
-        supabase_unaggregated_listings = master_listings.to_dict(orient='records')
+        supabase_unaggregated_listings = listings_unagg.to_dict(orient='records')
         supabase_unaggregated_sales = sales_joined.to_dict(orient='records')
 
         # ---------- Supabase ----------
