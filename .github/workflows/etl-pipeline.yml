@@ -2,7 +2,7 @@
 name: ETL Pipeline
 on:
   schedule:
-    - cron: "0 0 1 * *" # Run monthly on 1st day at midnight UTC
+    - cron: "0 0 25 * *" # Run monthly on 25th day at midnight UTC
   workflow_dispatch: # Allow manual triggers
 
 jobs:
