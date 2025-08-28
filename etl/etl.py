@@ -17,7 +17,7 @@ def main():
 
         # set lookback lag & window size (in months)
         lookback_lag = 2
-        lookback_window = 6
+        lookback_window = 24
 
         # calculate the max date for Parcl API
         three_months_ago = datetime.now() - relativedelta(months=lookback_lag)
@@ -41,35 +41,35 @@ def main():
 
         # dictionary to map the parcl_id to the county name
         county_id_map = {
-            # 5821775: 'Barrow', 
-            # 5823208: 'Bartow', 
+            5821775: 'Barrow', 
+            5823208: 'Bartow', 
             5824489: 'Butts', 
-            # 5821127: 'Carroll', 
-            # 5822987: 'Cherokee', 
-            # 5821000: 'Clayton', 
-            # 5822520: 'Cobb', 
-            # 5820743: 'Coweta', 
-            # 5820885: 'Dawson', 
-            # 5821075: 'DeKalb', 
-            # 5822002: 'Douglas', 
-            # 5822843: 'Fayette', 
-            # 5824605: 'Forsyth', 
-            # 5823604: 'Fulton', 
-            # 5822064: 'Gwinnett', 
-            # 5823136: 'Haralson', 
-            # 5821562: 'Heard', 
-            # 5820830: 'Henry', 
-            # 5820767: 'Jasper', 
-            # 5824502: 'Lumpkin', 
-            # 5822765: 'Meriwether', 
-            # 5822014: 'Morgan', 
-            # 5823086: 'Newton', 
-            # 5822617: 'Paulding', 
-            # 5821076: 'Pickens', 
-            # 5822152: 'Pike', 
-            # 5823393: 'Rockdale', 
-            # 5824484: 'Spalding', 
-            # 5821707: 'Walton'
+            5821127: 'Carroll', 
+            5822987: 'Cherokee', 
+            5821000: 'Clayton', 
+            5822520: 'Cobb', 
+            5820743: 'Coweta', 
+            5820885: 'Dawson', 
+            5821075: 'DeKalb', 
+            5822002: 'Douglas', 
+            5822843: 'Fayette', 
+            5824605: 'Forsyth', 
+            5823604: 'Fulton', 
+            5822064: 'Gwinnett', 
+            5823136: 'Haralson', 
+            5821562: 'Heard', 
+            5820830: 'Henry', 
+            5820767: 'Jasper', 
+            5824502: 'Lumpkin', 
+            5822765: 'Meriwether', 
+            5822014: 'Morgan', 
+            5823086: 'Newton', 
+            5822617: 'Paulding', 
+            5821076: 'Pickens', 
+            5822152: 'Pike', 
+            5823393: 'Rockdale', 
+            5824484: 'Spalding', 
+            5821707: 'Walton'
             }
 
         # read in hex values for spatial joins
