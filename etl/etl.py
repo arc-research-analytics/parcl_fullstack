@@ -16,8 +16,8 @@ def main():
         today_formatted = datetime.now().strftime('%Y.%m.%d')
 
         # set lookback lag & window size (in months)
-        lookback_lag = 4
-        lookback_window = 24
+        lookback_lag = 2
+        lookback_window = 6
 
         # calculate the max date for Parcl API
         three_months_ago = datetime.now() - relativedelta(months=lookback_lag)
@@ -41,35 +41,35 @@ def main():
 
         # dictionary to map the parcl_id to the county name
         county_id_map = {
-            5821775: 'Barrow', 
-            5823208: 'Bartow', 
+            # 5821775: 'Barrow', 
+            # 5823208: 'Bartow', 
             5824489: 'Butts', 
-            5821127: 'Carroll', 
-            5822987: 'Cherokee', 
-            5821000: 'Clayton', 
-            5822520: 'Cobb', 
-            5820743: 'Coweta', 
-            5820885: 'Dawson', 
-            5821075: 'DeKalb', 
-            5822002: 'Douglas', 
-            5822843: 'Fayette', 
-            5824605: 'Forsyth', 
-            5823604: 'Fulton', 
-            5822064: 'Gwinnett', 
-            5823136: 'Haralson', 
-            5821562: 'Heard', 
-            5820830: 'Henry', 
-            5820767: 'Jasper', 
-            5824502: 'Lumpkin', 
-            5822765: 'Meriwether', 
-            5822014: 'Morgan', 
-            5823086: 'Newton', 
-            5822617: 'Paulding', 
-            5821076: 'Pickens', 
-            5822152: 'Pike', 
-            5823393: 'Rockdale', 
-            5824484: 'Spalding', 
-            5821707: 'Walton'
+            # 5821127: 'Carroll', 
+            # 5822987: 'Cherokee', 
+            # 5821000: 'Clayton', 
+            # 5822520: 'Cobb', 
+            # 5820743: 'Coweta', 
+            # 5820885: 'Dawson', 
+            # 5821075: 'DeKalb', 
+            # 5822002: 'Douglas', 
+            # 5822843: 'Fayette', 
+            # 5824605: 'Forsyth', 
+            # 5823604: 'Fulton', 
+            # 5822064: 'Gwinnett', 
+            # 5823136: 'Haralson', 
+            # 5821562: 'Heard', 
+            # 5820830: 'Henry', 
+            # 5820767: 'Jasper', 
+            # 5824502: 'Lumpkin', 
+            # 5822765: 'Meriwether', 
+            # 5822014: 'Morgan', 
+            # 5823086: 'Newton', 
+            # 5822617: 'Paulding', 
+            # 5821076: 'Pickens', 
+            # 5822152: 'Pike', 
+            # 5823393: 'Rockdale', 
+            # 5824484: 'Spalding', 
+            # 5821707: 'Walton'
             }
 
         # read in hex values for spatial joins
@@ -422,9 +422,106 @@ def main():
         sales_county_summary['median_vintage'] = sales_county_summary['median_vintage'].astype(int)
         sales_county_summary['median_size'] = sales_county_summary['median_size'].astype(int)
 
-        # convert dataframes to dict format for supabase
+        # remove rows where 'as_of_date' is not today_formatted
+        final_hex_summary = final_hex_summary[final_hex_summary['as_of_date'] == today_formatted]
+        sales_county_summary = sales_county_summary[sales_county_summary['as_of_date'] == today_formatted]
+
+        # sort sales_county_summary by 'county' and 'year_month' in such a way that 'Barrow' comes first in the 
+        # county column and then '2023-05' comes first in 'year_month'
+        sales_county_summary = sales_county_summary.sort_values(by='county', ascending=True)
+
+        # convert aggregateddataframes to dict format for supabase
         supabase_hex_summary = final_hex_summary.to_dict(orient='records')
         supabase_county_summary = sales_county_summary.to_dict(orient='records')
+
+        # clean up unaggregated dataframes before to_dict method
+        master_listings = master_listings.copy()
+        master_listings['as_of_date'] = today_formatted
+        master_listings = master_listings[[
+            'address',
+            'county_name',
+            'property_type',
+            'square_feet',
+            'year_built',
+            'latitude',
+            'longitude',
+            'institutional_investor',
+            'original_list_date',
+            'original_list_price',
+            'current_list_price',
+            'list_per_sq_ft',
+            'days_on_market',
+            'most_recent_sale_date',
+            'most_recent_sale_price',
+            'as_of_date',
+        ]]
+
+        master_listings = master_listings.rename(columns={
+            'county_name': 'county',
+            'institutional_investor': 'inst_owner',
+        })
+
+        master_listings['property_type'] = master_listings['property_type'].str.replace('SINGLE_FAMILY', 'SFR')
+        master_listings['property_type'] = master_listings['property_type'].str.replace('TOWNHOUSE', 'Townhouse')
+        master_listings['property_type'] = master_listings['property_type'].str.replace('CONDO', 'Condo')
+
+        sales_joined = sales_joined.copy()
+        sales_joined['as_of_date'] = today_formatted
+        sales_joined = sales_joined[[
+            'address',
+            'county',
+            'property_type',
+            'square_feet',
+            'year_built',
+            'latitude',
+            'longitude',
+            'sale_date',
+            'sale_price',
+            'price_sf',
+            'buyer',
+            'seller',
+            'as_of_date',
+        ]]
+
+        # fill NaN values with 0
+        master_listings = master_listings.fillna(0)
+        sales_joined = sales_joined.fillna(0)
+
+        # cast 'year_built' to int in both dataframes
+        master_listings['year_built'] = master_listings['year_built'].astype(int)
+        sales_joined['year_built'] = sales_joined['year_built'].astype(int)
+
+        # Handle date columns - convert any datetime objects to strings FIRST
+        # Check if sale_date is datetime and convert to string
+        if sales_joined['sale_date'].dtype == 'datetime64[ns]' or hasattr(sales_joined['sale_date'].iloc[0], 'strftime'):
+            sales_joined['sale_date'] = sales_joined['sale_date'].dt.strftime('%Y-%m-%d')
+
+        # Do the same for listings date columns if needed
+        if master_listings['original_list_date'].dtype == 'datetime64[ns]' or hasattr(master_listings['original_list_date'].iloc[0], 'strftime'):
+            master_listings['original_list_date'] = master_listings['original_list_date'].dt.strftime('%Y-%m-%d')
+
+        if master_listings['most_recent_sale_date'].dtype == 'datetime64[ns]' or hasattr(master_listings['most_recent_sale_date'].iloc[0], 'strftime'):
+            master_listings['most_recent_sale_date'] = master_listings['most_recent_sale_date'].dt.strftime('%Y-%m-%d')
+
+        # Replace '0' and 'NaT' with None for date columns
+        master_listings['original_list_date'] = master_listings['original_list_date'].replace(['0', 'NaT'], None)
+        master_listings['most_recent_sale_date'] = master_listings['most_recent_sale_date'].replace(['0', 'NaT'], None)
+        sales_joined['sale_date'] = sales_joined['sale_date'].replace(['0', 'NaT'], None)
+
+        # Convert any remaining datetime columns to strings
+        for col in sales_joined.columns:
+            if sales_joined[col].dtype == 'datetime64[ns]':
+                print(f"Converting datetime column {col} to string")
+                sales_joined[col] = sales_joined[col].dt.strftime('%Y-%m-%d')
+                sales_joined[col] = sales_joined[col].replace('NaT', None)
+
+        # export to CSV for testing
+        master_listings.to_csv('master_listings.csv', index=False)
+        sales_joined.to_csv('sales_joined.csv', index=False)
+
+        # export to JSON for Supabase
+        supabase_unaggregated_listings = master_listings.to_dict(orient='records')
+        supabase_unaggregated_sales = sales_joined.to_dict(orient='records')
 
         # ---------- Supabase ----------
 
@@ -461,6 +558,29 @@ def main():
             print(f"Inserted batch {i//batch_size + 1} of {len(supabase_county_summary)//batch_size}")
 
         print('County summary rows added to Supabase🎉')
+
+        # wipe out existing rows in unaggregated listings table
+        supabase.table("listings_unagg").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+
+        # insert new rows into unaggregated supabase table
+        for i in range(0, len(supabase_unaggregated_listings), batch_size):
+            batch = supabase_unaggregated_listings[i:i+batch_size]
+            supabase.table("listings_unagg").insert(batch).execute()
+            print(f"Inserted batch {i//batch_size + 1} of {len(supabase_unaggregated_listings)//batch_size}")
+
+        print('Unaggregated listings added to Supabase🎉')
+
+        # wipe out existing rows in unaggregated sales table
+        supabase.table("sales_unagg").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+
+        # insert new rows into unaggregated supabase table
+        for i in range(0, len(supabase_unaggregated_sales), batch_size):
+
+            batch = supabase_unaggregated_sales[i:i+batch_size]
+            supabase.table("sales_unagg").insert(batch).execute()
+            print(f"Inserted batch {i//batch_size + 1} of {len(supabase_unaggregated_sales)//batch_size}")
+
+        print('Unaggregated sales added to Supabase🎉')
 
     except Exception as e:
         print(f"Error: {str(e)}")
