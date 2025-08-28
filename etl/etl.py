@@ -17,7 +17,7 @@ def main():
 
         # set lookback lag & window size (in months)
         lookback_lag = 4
-        lookback_window = 12
+        lookback_window = 24
 
         # calculate the max date for Parcl API
         three_months_ago = datetime.now() - relativedelta(months=lookback_lag)
@@ -406,6 +406,7 @@ def main():
 
         # fill NaN values with 0
         final_hex_summary = final_hex_summary.fillna(0)
+        sales_county_summary = sales_county_summary.fillna(0)
 
         # cast hex summary columns to int
         final_hex_summary['total_sales'] = final_hex_summary['total_sales'].astype(int)
