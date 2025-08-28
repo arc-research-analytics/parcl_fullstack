@@ -28,3 +28,55 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           python etl.py
+
+      # Send success email
+      - name: Send Success Email
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "✅ ETL Pipeline Success // Parcl Labs API to Supabase"
+          body: |
+            🎉 Your ETL pipeline completed successfully!
+
+            📊 Run Details:
+            • Repository: ${{ github.repository }}
+            • Run Number: ${{ github.run_number }}
+            • Timestamp: ${{ github.event.head_commit.timestamp }}
+            • Workflow: ${{ github.workflow }}
+
+            🔗 View detailed logs:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Your housing data has been successfully updated in Supabase! 🏠
+          to: ${{ secrets.EMAIL_USERNAME }} # Sends to the same email
+          from: ${{ secrets.EMAIL_USERNAME }}
+
+      # Send failure email
+      - name: Send Failure Email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ ETL Pipeline FAILED // Parcl Labs API to Supabase"
+          body: |
+            ⚠️ Your ETL pipeline encountered an error!
+
+            📊 Run Details:
+            • Repository: ${{ github.repository }}
+            • Run Number: ${{ github.run_number }}
+            • Timestamp: ${{ github.event.head_commit.timestamp }}
+            • Workflow: ${{ github.workflow }}
+
+            🔗 View error logs:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Please check the logs above to diagnose and fix the issue.
+          to: ${{ secrets.EMAIL_USERNAME }}
+          from: ${{ secrets.EMAIL_USERNAME }}
