@@ -15,7 +15,7 @@ def main():
         today = datetime.now()
         today_formatted = datetime.now().strftime('%Y.%m.%d')
 
-        # set lookback lag & window size in months 
+        # set lookback lag & window size (in months)
         lookback_lag = 4
         lookback_window = 12
 
@@ -42,34 +42,34 @@ def main():
         # dictionary to map the parcl_id to the county name
         county_id_map = {
             5821775: 'Barrow', 
-            # 5823208: 'Bartow', 
-            # 5824489: 'Butts', 
-            # 5821127: 'Carroll', 
-            # 5822987: 'Cherokee', 
-            # 5821000: 'Clayton', 
-            # 5822520: 'Cobb', 
-            # 5820743: 'Coweta', 
-            # 5820885: 'Dawson', 
-            # 5821075: 'DeKalb', 
-            # 5822002: 'Douglas', 
-            # 5822843: 'Fayette', 
-            # 5824605: 'Forsyth', 
-            # 5823604: 'Fulton', 
-            # 5822064: 'Gwinnett', 
-            # 5823136: 'Haralson', 
-            # 5821562: 'Heard', 
-            # 5820830: 'Henry', 
-            # 5820767: 'Jasper', 
-            # 5824502: 'Lumpkin', 
-            # 5822765: 'Meriwether', 
-            # 5822014: 'Morgan', 
-            # 5823086: 'Newton', 
-            # 5822617: 'Paulding', 
-            # 5821076: 'Pickens', 
-            # 5822152: 'Pike', 
-            # 5823393: 'Rockdale', 
-            # 5824484: 'Spalding', 
-            # 5821707: 'Walton'
+            5823208: 'Bartow', 
+            5824489: 'Butts', 
+            5821127: 'Carroll', 
+            5822987: 'Cherokee', 
+            5821000: 'Clayton', 
+            5822520: 'Cobb', 
+            5820743: 'Coweta', 
+            5820885: 'Dawson', 
+            5821075: 'DeKalb', 
+            5822002: 'Douglas', 
+            5822843: 'Fayette', 
+            5824605: 'Forsyth', 
+            5823604: 'Fulton', 
+            5822064: 'Gwinnett', 
+            5823136: 'Haralson', 
+            5821562: 'Heard', 
+            5820830: 'Henry', 
+            5820767: 'Jasper', 
+            5824502: 'Lumpkin', 
+            5822765: 'Meriwether', 
+            5822014: 'Morgan', 
+            5823086: 'Newton', 
+            5822617: 'Paulding', 
+            5821076: 'Pickens', 
+            5822152: 'Pike', 
+            5823393: 'Rockdale', 
+            5824484: 'Spalding', 
+            5821707: 'Walton'
             }
 
         # read in hex values for spatial joins
@@ -421,10 +421,6 @@ def main():
         sales_county_summary['median_vintage'] = sales_county_summary['median_vintage'].astype(int)
         sales_county_summary['median_size'] = sales_county_summary['median_size'].astype(int)
 
-        # # for testing purposes
-        # final_hex_summary = pd.read_csv('test_hex_summary.csv')
-        # sales_county_summary = pd.read_csv('test_county_summary.csv')
-
         # convert dataframes to dict format for supabase
         supabase_hex_summary = final_hex_summary.to_dict(orient='records')
         supabase_county_summary = sales_county_summary.to_dict(orient='records')
@@ -464,7 +460,7 @@ def main():
             print(f"Inserted batch {i//batch_size + 1} of {len(supabase_county_summary)//batch_size}")
 
         print('County summary rows added to Supabase🎉')
-        
+
     except Exception as e:
         print(f"Error: {str(e)}")
         print("Full traceback:")
