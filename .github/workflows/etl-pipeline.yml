@@ -2,7 +2,7 @@
 name: ETL Pipeline
 on:
   schedule:
-    - cron: "0 0 25 * *" # Run monthly on 25th day at midnight UTC
+    - cron: "0 5 25 * *" # Run monthly on 25th day at midnight EST Nov-March, 1am EST April-Oct
   workflow_dispatch: # Allow manual triggers
 
 jobs:
@@ -40,7 +40,9 @@ jobs:
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "✅ ETL Pipeline Success"
           body: |
-            🎉 BRO. Your ETL pipeline of Parcl Labs API to Supabase completed successfully! Damn it feels good to be a gangsta.
+            BRO. 
+            Your Parcl Labs -> Supabase ETL pipeline completed successfully🎉 
+            Damn it feels good to be a gangsta...
 
             📊 Run Details:
             • Repository: ${{ github.repository }}
