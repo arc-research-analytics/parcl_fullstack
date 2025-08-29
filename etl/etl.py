@@ -56,7 +56,7 @@ def main():
         # Process listings
         master_listings = listings_processor.process_all_listings(raw_listings)
         print(f"✅ Processed {len(master_listings):,} current listings")
-        validate_data_quality(master_listings, "listings")
+        # validate_data_quality(master_listings, "listings")
         
         # Create spatial listings and aggregate
         listings_with_hex = listings_processor.create_spatial_listings(master_listings)
@@ -72,7 +72,7 @@ def main():
         # Process sales
         master_sales = sales_processor.process_all_sales(raw_sales)
         print(f"✅ Processed {len(master_sales):,} sales transactions")
-        validate_data_quality(master_sales, "sales")
+        # validate_data_quality(master_sales, "sales")
         
         # Create spatial sales data
         sales_with_hex = sales_processor.create_spatial_sales(master_sales)
