@@ -24,7 +24,7 @@ class ParclAPIClient:
         Returns:
             DataFrame with listing data
         """
-        print(f'Getting listings for {county_name}...')
+        # print(f'Getting listings for {county_name}...')  # COMMENTED: Verbose for production
         
         listings = self.client.property_v2.search.retrieve(
             parcl_ids=[parcl_id],
@@ -39,7 +39,7 @@ class ParclAPIClient:
         )
         
         listings_df = listings[0]
-        print(f'-#-#-#-# Found {len(listings_df):,} raw listing records in {county_name}')
+        # print(f'-#-#-#-# Found {len(listings_df):,} raw listing records in {county_name}')  # COMMENTED: Verbose for production
         
         return listings_df
     
@@ -55,7 +55,7 @@ class ParclAPIClient:
         Returns:
             DataFrame with sales data
         """
-        print(f'Getting sales for {county_name}...')
+        # print(f'Getting sales for {county_name}...')  # COMMENTED: Verbose for production
         
         sales = self.client.property_v2.search.retrieve(
             parcl_ids=[parcl_id],
@@ -71,7 +71,7 @@ class ParclAPIClient:
         )
         
         sales_df = sales[0]
-        print(f'-#-#-#-# Found {len(sales_df):,} sales in {county_name}')
+        # print(f'-#-#-#-# Found {len(sales_df):,} sales in {county_name}')  # COMMENTED: Verbose for production
         
         return sales_df
     

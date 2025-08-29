@@ -28,20 +28,20 @@ def main():
         print("🚀 Starting ETL Pipeline...")
         
         # Initialize configuration
-        print("📋 Loading configuration...")
+        # print("📋 Loading configuration...")
         config = ETLConfig()
-        print(f"📅 Data range: {config.min_date_formatted} to {config.max_date_formatted}")
-        print(f"⏰ Lookback window: {config.lookback_window} months")
-        print(f"🔶 Hex aggregation window: {config.hex_aggregation_window} months")
+        # print(f"📅 Data range: {config.min_date_formatted} to {config.max_date_formatted}")
+        # print(f"⏰ Lookback window: {config.lookback_window} months")
+        # print(f"🔶 Hex aggregation window: {config.hex_aggregation_window} months")
         
         # Initialize API client
-        print("🔌 Connecting to Parcl Labs API...")
+        # print("🔌 Connecting to Parcl Labs API...")
         api_client = ParclAPIClient(config.parcl_api_key)
         
         # Load hex data for spatial joins
-        print("🗺️ Loading hex geodata...")
+        # print("🗺️ Loading hex geodata...")
         hex_gdf = load_hex_data()
-        print(f"📍 Loaded {len(hex_gdf):,} hex polygons")
+        # print(f"📍 Loaded {len(hex_gdf):,} hex polygons")
         
         # Initialize data processors
         listings_processor = ListingsProcessor(config, hex_gdf)
@@ -56,12 +56,12 @@ def main():
         # Process listings
         master_listings = listings_processor.process_all_listings(raw_listings)
         print(f"✅ Processed {len(master_listings):,} current listings")
-        # validate_data_quality(master_listings, "listings")
+        validate_data_quality(master_listings, "listings")  # Now no-op function for production
         
         # Create spatial listings and aggregate
         listings_with_hex = listings_processor.create_spatial_listings(master_listings)
         listings_hex_summary = listings_processor.aggregate_listings_by_hex(listings_with_hex)
-        print(f"📊 Created hex aggregations for {len(listings_hex_summary):,} hexagons")
+        # print(f"📊 Created hex aggregations for {len(listings_hex_summary):,} hexagons")
         
         # ========== SALES PROCESSING ==========
         print("\n💰 Processing Sales Data...")
@@ -72,29 +72,29 @@ def main():
         # Process sales
         master_sales = sales_processor.process_all_sales(raw_sales)
         print(f"✅ Processed {len(master_sales):,} sales transactions")
-        # validate_data_quality(master_sales, "sales")
+        validate_data_quality(master_sales, "sales")  # Now no-op function for production
         
         # Create spatial sales data
         sales_with_hex = sales_processor.create_spatial_sales(master_sales)
         
         # Create investor sales subset
         sales_investor = sales_processor.create_investor_sales_data(sales_with_hex)
-        print(f"🏢 Identified {len(sales_investor):,} institutional investor transactions")
+        # print(f"🏢 Identified {len(sales_investor):,} institutional investor transactions")
         
         # Aggregate by hex (12-month window)
         sales_hex_summary = sales_processor.aggregate_sales_by_hex(sales_with_hex, sales_investor)
-        print(f"📊 Created hex sales aggregations for {len(sales_hex_summary):,} hexagons (12-month window)")
+        # print(f"📊 Created hex sales aggregations for {len(sales_hex_summary):,} hexagons (12-month window)")
         
         # Aggregate by county (36-month window)
         sales_county_summary = sales_processor.aggregate_sales_by_county(sales_with_hex, sales_investor)
-        print(f"📈 Created county sales aggregations for {len(sales_county_summary):,} county-month records (36-month window)")
+        # print(f"📈 Created county sales aggregations for {len(sales_county_summary):,} county-month records (36-month window)")
         
         # ========== COMBINE SUMMARIES ==========
-        print("\n🔄 Combining aggregated data...")
+        # print("\n🔄 Combining aggregated data...")
         
         # Combine hex summaries
         final_hex_summary = combine_hex_and_listings_summaries(sales_hex_summary, listings_hex_summary)
-        print(f"📋 Final hex summary: {len(final_hex_summary):,} records")
+        # print(f"📋 Final hex summary: {len(final_hex_summary):,} records")
         
         # ========== DATABASE UPLOAD ==========
         print("\n☁️ Uploading to Supabase...")

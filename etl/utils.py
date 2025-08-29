@@ -21,18 +21,23 @@ def combine_hex_and_listings_summaries(sales_hex_summary: pd.DataFrame,
 
 def validate_data_quality(df: pd.DataFrame, data_type: str) -> None:
     """Perform basic data quality validation."""
-    print(f"\n--- Data Quality Check for {data_type} ---")
-    print(f"Total records: {len(df):,}")
-    print(f"Null values per column:")
-    null_counts = df.isnull().sum()
-    for col, count in null_counts.items():
-        if count > 0:
-            print(f"  {col}: {count:,} ({count/len(df)*100:.1f}%)")
+    # COMMENTED: Verbose validation disabled for production performance
+    # This function was causing significant slowdown on large datasets (295k+ records)
+    # All detailed validation is commented out but can be re-enabled for debugging
     
-    if data_type == "sales" and 'price_sf' in df.columns:
-        print(f"Price per sq ft stats:")
-        print(f"  Min: ${df['price_sf'].min():.2f}")
-        print(f"  Max: ${df['price_sf'].max():.2f}")
-        print(f"  Median: ${df['price_sf'].median():.2f}")
+    # print(f"\n--- Data Quality Check for {data_type} ---")
+    # print(f"Total records: {len(df):,}")
+    # print(f"Null values per column:")
+    # null_counts = df.isnull().sum()
+    # for col, count in null_counts.items():
+    #     if count > 0:
+    #         print(f"  {col}: {count:,} ({count/len(df)*100:.1f}%)")
+    
+    # if data_type == "sales" and 'price_sf' in df.columns:
+    #     print(f"Price per sq ft stats:")
+    #     print(f"  Min: ${df['price_sf'].min():.2f}")
+    #     print(f"  Max: ${df['price_sf'].max():.2f}")
+    #     print(f"  Median: ${df['price_sf'].median():.2f}")
         
-    print("--- End Data Quality Check ---\n")
+    # print("--- End Data Quality Check ---\n")
+    pass  # Function now does nothing but can be uncommented for debugging

@@ -12,7 +12,7 @@ class SupabaseManager:
         """Initialize Supabase client."""
         self.config = config
         self.supabase = create_client(config.supabase_url, config.supabase_key)
-        print('Connected to Supabase...')
+        # print('Connected to Supabase...')  # COMMENTED: Verbose for production
     
     def prepare_dataframe_for_supabase(self, df: pd.DataFrame, today_formatted: str) -> pd.DataFrame:
         """Prepare DataFrame for Supabase insertion by handling data types and dates."""
@@ -176,7 +176,7 @@ class SupabaseManager:
     
     def clear_table(self, table_name: str, condition_column: str = None, condition_value: str = None):
         """Clear existing data from a table using batch deletion to avoid timeouts."""
-        print(f"Clearing table '{table_name}'...")
+        # print(f"Clearing table '{table_name}'...")  # COMMENTED: Verbose for production
         
         if condition_column and condition_value:
             self.supabase.table(table_name).delete().neq(condition_column, condition_value).execute()
@@ -192,7 +192,7 @@ class SupabaseManager:
     
     def _clear_large_table_in_batches(self, table_name: str):
         """Clear large tables by deleting records older than today to avoid timeout errors."""
-        print(f"  Attempting to clear all existing data from {table_name}...")
+        # print(f"  Attempting to clear all existing data from {table_name}...")  # COMMENTED: Verbose for production
         
         # Strategy 1: Delete by date ranges (more reliable than LIMIT on DELETE)
         try:
@@ -200,28 +200,28 @@ class SupabaseManager:
             today = self.config.today_formatted
             result = self.supabase.table(table_name).delete().neq("as_of_date", today).execute()
             old_deleted = len(result.data) if result.data else 0
-            print(f"  Deleted {old_deleted} old records (not from {today})")
+            # print(f"  Deleted {old_deleted} old records (not from {today})")  # COMMENTED: Verbose for production
             
             # Then delete any remaining records from today (if they exist)
             result = self.supabase.table(table_name).delete().eq("as_of_date", today).execute()
             today_deleted = len(result.data) if result.data else 0
-            print(f"  Deleted {today_deleted} records from {today}")
+            # print(f"  Deleted {today_deleted} records from {today}")  # COMMENTED: Verbose for production
             
             total_deleted = old_deleted + today_deleted
-            print(f"  Total rows deleted from {table_name}: {total_deleted}")
+            # print(f"  Total rows deleted from {table_name}: {total_deleted}")  # COMMENTED: Verbose for production
             
         except Exception as e:
-            print(f"  Date-based deletion failed: {e}")
-            print(f"  Falling back to direct deletion...")
+            print(f"  Date-based deletion failed: {e}")  # KEEP: Important error info
+            # print(f"  Falling back to direct deletion...")  # COMMENTED: Verbose for production
             
             # Strategy 2: Fallback - try direct deletion with smaller timeout expectation
             try:
                 result = self.supabase.table(table_name).delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
                 deleted_count = len(result.data) if result.data else 0
-                print(f"  Direct deletion completed: {deleted_count} rows deleted")
+                # print(f"  Direct deletion completed: {deleted_count} rows deleted")  # COMMENTED: Verbose for production
             except Exception as e2:
-                print(f"  ERROR: Could not clear table {table_name}: {e2}")
-                print(f"  Proceeding anyway - new data will be appended")
+                print(f"  ERROR: Could not clear table {table_name}: {e2}")  # KEEP: Important error info
+                print(f"  Proceeding anyway - new data will be appended")  # KEEP: Important warning
     
     def insert_data_in_batches(self, table_name: str, data: List[Dict[str, Any]], description: str = ""):
         """Insert data into Supabase table in batches."""
@@ -236,39 +236,39 @@ class SupabaseManager:
             batch = data[i:i+batch_size]
             self.supabase.table(table_name).insert(batch).execute()
             batch_number = i // batch_size + 1
-            print(f"Inserted batch {batch_number} of {total_batches} for {description}")
+            # print(f"Inserted batch {batch_number} of {total_batches} for {description}")  # COMMENTED: Verbose for production
     
     def upload_all_data(self, hex_summary: pd.DataFrame, county_summary: pd.DataFrame, 
                        listings_df: pd.DataFrame, sales_df: pd.DataFrame, today_formatted: str):
         """Upload all processed data to Supabase."""
         
         # Prepare data for Supabase
-        print("Preparing data for Supabase...")
+        # print("Preparing data for Supabase...")  # COMMENTED: Verbose for production
         supabase_hex_summary = self.prepare_hex_summary_for_supabase(hex_summary, today_formatted)
         supabase_county_summary = self.prepare_county_summary_for_supabase(county_summary, today_formatted)
         supabase_listings = self.prepare_listings_for_supabase(listings_df, today_formatted)
         supabase_sales = self.prepare_sales_for_supabase(sales_df, today_formatted)
         
         # Upload hex summary
-        print("Uploading hex summary data...")
+        # print("Uploading hex summary data...")  # COMMENTED: Verbose for production
         self.clear_table("hex_summary")
         self.insert_data_in_batches("hex_summary", supabase_hex_summary, "hex summary")
         print('Hex summary rows added to Supabase🎉')
         
         # Upload county summary
-        print("Uploading county summary data...")
+        # print("Uploading county summary data...")  # COMMENTED: Verbose for production
         self.clear_table("county_summary")
         self.insert_data_in_batches("county_summary", supabase_county_summary, "county summary")
         print('County summary rows added to Supabase🎉')
         
         # Upload unaggregated listings
-        print("Uploading unaggregated listings data...")
+        # print("Uploading unaggregated listings data...")  # COMMENTED: Verbose for production
         self.clear_table("listings_unagg")
         self.insert_data_in_batches("listings_unagg", supabase_listings, "unaggregated listings")
         print('Unaggregated listings added to Supabase🎉')
         
         # Upload unaggregated sales
-        print("Uploading unaggregated sales data...")
+        # print("Uploading unaggregated sales data...")  # COMMENTED: Verbose for production
         self.clear_table("sales_unagg")
         self.insert_data_in_batches("sales_unagg", supabase_sales, "unaggregated sales")
         print('Unaggregated sales added to Supabase🎉')
