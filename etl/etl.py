@@ -437,8 +437,7 @@ def main():
         final_hex_summary = final_hex_summary[final_hex_summary['as_of_date'] == today_formatted]
         sales_county_summary = sales_county_summary[sales_county_summary['as_of_date'] == today_formatted]
 
-        # sort sales_county_summary by 'county' and 'year_month' in such a way that 'Barrow' comes first in the 
-        # county column and then '2023-05' comes first in 'year_month'
+        # sort sales_county_summary by 'county' and 'year_month' in such a way that 'Barrow' comes first in the list
         sales_county_summary = sales_county_summary.sort_values(by='county', ascending=True)
 
         # convert aggregateddataframes to dict format for supabase
