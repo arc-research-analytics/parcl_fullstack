@@ -15,7 +15,8 @@ class ETLConfig:
         
         # Time parameters
         self.lookback_lag = 2  # this sets the max date for the Parcl API
-        self.lookback_window = 36  # months for the county summary and unaggregated listings & sales
+        self.lookback_window = 6  # months for incremental data fetching 
+        self.retention_window = 36  # months to retain in Supabase (FIFO cutoff) - EASILY ADJUSTABLE!
         self.hex_aggregation_window = 12  # months for hex-level data
         
         # Date calculations
@@ -117,3 +118,12 @@ class ETLConfig:
     def get_hex_date_filter(self):
         """Get the date filter for hex-level aggregations (12 months)."""
         return self.max_date - relativedelta(months=self.hex_aggregation_window)
+
+    def get_retention_cutoff_date(self):
+        """Get the cutoff date for data retention (FIFO)."""
+        cutoff_date = self.today - relativedelta(months=self.retention_window)
+        return cutoff_date.replace(day=1)  # First day of the month
+
+    def get_retention_cutoff_formatted(self):
+        """Get formatted retention cutoff date."""
+        return self.get_retention_cutoff_date().strftime('%Y-%m-%d')

@@ -217,6 +217,7 @@ class SalesProcessor:
         df = df.drop_duplicates(subset=['county', 'sale_date', 'sale_price'])
         
         # Calculate price per square foot
+        df = df.copy()
         df['price_sf'] = df['sale_price'] / df['square_feet']
         
         # Remove excessive price per square foot

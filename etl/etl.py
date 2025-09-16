@@ -6,11 +6,11 @@ It processes listings and sales data, performs spatial joins with H3 hexagon dat
 and uploads the results to Supabase.
 
 Key Features:
-- Configurable lookback periods (36 months for county trends, 12 months for hex aggregations)
+- Configurable lookback periods (in config.py)
 - Institutional investor tracking
-- Data quality filtering 
+- Data quality filtering and validation
 - Spatial aggregation by H3 hexagons and counties
-- Batch uploads to Supabase database
+- Batch uploads to Supabase database of aggregated and unaggregated data
 """
 
 import sys
@@ -113,8 +113,10 @@ def main():
         
         print("\n🎉 ETL Pipeline completed successfully!")
         print(f"📊 Summary:")
-        print(f"  • Listings processed: {len(master_listings):,}")
-        print(f"  • Sales processed: {len(master_sales):,}")
+        print(f"  • Listings processed: {len(master_listings):,} (full refresh)")
+        print(f"  • Sales processed: {len(master_sales):,} (FIFO - {config.lookback_window} months fetched)")
+        print(f"  • Sales retention: {config.retention_window} months in Supabase")
+        print(f"  • Retention cutoff: {config.get_retention_cutoff_formatted()}")
         print(f"  • Hex aggregations: {len(final_hex_summary):,}")
         print(f"  • County-month records: {len(sales_county_summary):,}")
         
